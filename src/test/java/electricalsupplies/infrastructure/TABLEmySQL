@@ -1,0 +1,165 @@
+CREATE DATABASE IF NOT EXISTS ElectricalSupplies;
+USE ElectricalSupplies;
+
+-- Tabla de Roles
+CREATE TABLE roles (
+    id_role INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Tabla de Usuarios
+CREATE TABLE users (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+-- Relación Usuarios - Roles (Evita multivaluados)
+CREATE TABLE user_roles (
+    id_user INT NOT NULL,
+    id_role INT NOT NULL,
+    PRIMARY KEY (id_user, id_role),
+    FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE,
+    FOREIGN KEY (id_role) REFERENCES roles(id_role) ON DELETE CASCADE
+);
+
+-- Tabla de Clientes
+CREATE TABLE clients (
+    id_client INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+    email VARCHAR(255);
+	phone VARCHAR(20);
+	client_id_type INT;
+);
+
+-- Tabla de Tipos de Cliente
+CREATE TABLE client_types (
+    id_client_type INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Relación Clientes - Tipos de Cliente (Evita multivaluados)
+CREATE TABLE client_type_relation (
+    id_client INT NOT NULL,
+    id_client_type INT NOT NULL,
+    PRIMARY KEY (id_client, id_client_type),
+    FOREIGN KEY (id_client) REFERENCES clients(id_client) ON DELETE CASCADE,
+    FOREIGN KEY (id_client_type) REFERENCES client_types(id_client_type) ON DELETE CASCADE
+);
+
+-- Tabla de Contactos de Clientes
+CREATE TABLE client_contacts (
+    id_contact INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT NOT NULL,
+    contact_type VARCHAR(50) NOT NULL,
+    contact_value VARCHAR(255) NOT NULL,
+    FOREIGN KEY (id_client) REFERENCES clients(id_client) ON DELETE CASCADE
+);
+
+-- Tabla de Categorías de Productos
+CREATE TABLE categories (
+    id_category INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- Tabla de Productos
+CREATE TABLE products (
+    id_product INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL,
+    threshold INT DEFAULT 0 -- Umbral para alertas de stock bajo
+);
+
+-- Relación Productos - Categorías (Evita multivaluados)
+CREATE TABLE product_categories (
+    id_product INT NOT NULL,
+    id_category INT NOT NULL,
+    PRIMARY KEY (id_product, id_category),
+    FOREIGN KEY (id_product) REFERENCES products(id_product) ON DELETE CASCADE,
+    FOREIGN KEY (id_category) REFERENCES categories(id_category) ON DELETE CASCADE
+);
+
+-- Tabla de Ventas
+CREATE TABLE sales (
+    id_sale INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT NOT NULL,
+    id_user INT NOT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_client) REFERENCES clients(id_client) ON DELETE CASCADE,
+    FOREIGN KEY (id_user) REFERENCES users(id_user) ON DELETE CASCADE
+);
+
+-- Tabla de Detalles de Ventas
+CREATE TABLE sale_details (
+    id_detail INT AUTO_INCREMENT PRIMARY KEY,
+    id_sale INT NOT NULL,
+    id_product INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_sale) REFERENCES sales(id_sale) ON DELETE CASCADE,
+    FOREIGN KEY (id_product) REFERENCES products(id_product) ON DELETE CASCADE
+);
+
+-- Tabla de Estados de Pedido
+CREATE TABLE order_statuses (
+    id_order_status INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Tabla de Pedidos
+CREATE TABLE orders (
+    id_order INT AUTO_INCREMENT PRIMARY KEY,
+    id_client INT NOT NULL,
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_order_status INT NOT NULL,
+    FOREIGN KEY (id_client) REFERENCES clients(id_client) ON DELETE CASCADE,
+    FOREIGN KEY (id_order_status) REFERENCES order_statuses(id_order_status) ON DELETE CASCADE
+);
+
+-- Tabla de Detalles de Pedidos
+CREATE TABLE order_details (
+    id_detail INT AUTO_INCREMENT PRIMARY KEY,
+    id_order INT NOT NULL,
+    id_product INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_order) REFERENCES orders(id_order) ON DELETE CASCADE,
+    FOREIGN KEY (id_product) REFERENCES products(id_product) ON DELETE CASCADE
+);
+
+-- Tabla de Movimientos de Inventario
+CREATE TABLE inventory_movements (
+    id_movement INT AUTO_INCREMENT PRIMARY KEY,
+    id_product INT NOT NULL,
+    movement_type ENUM('In', 'Out') NOT NULL,
+    quantity INT NOT NULL,
+    movement_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    description TEXT,
+    FOREIGN KEY (id_product) REFERENCES products(id_product) ON DELETE CASCADE
+);
+
+-- Tabla de Devoluciones
+CREATE TABLE returns (
+    id_return INT AUTO_INCREMENT PRIMARY KEY,
+    id_sale INT NOT NULL,
+    return_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT,
+    status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+    FOREIGN KEY (id_sale) REFERENCES sales(id_sale) ON DELETE CASCADE
+);
+
+-- Tabla de Notificaciones
+CREATE TABLE notifications (
+    id_notification INT AUTO_INCREMENT PRIMARY KEY,
+    id_order INT NOT NULL,
+    notification_type ENUM('StatusUpdate', 'Reminder') NOT NULL,
+    notification_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    message TEXT,
+    FOREIGN KEY (id_order) REFERENCES orders(id_order) ON DELETE CASCADE
+);
